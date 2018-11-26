@@ -13,7 +13,6 @@ class DataProc:
     'data pre-processing'
     PATH = '../data/'
     
-    @staticmethod
     def dataLoad():
         'loads all data in json as np array'
         JDATA = 'feature_data.json'
