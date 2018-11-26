@@ -9,29 +9,25 @@ import scipy.io as sio
 import json
 import numpy as np
 
-# data pre-processing
 class DataProc:
+    'data pre-processing'
     PATH = '../data/'
     
     @staticmethod
-    # loads all data in json as np array
     def dataLoad():
+        'loads all data in json as np array'
         JDATA = 'feature_data.json'
         with open(DataProc.PATH + JDATA, 'r') as jdata:
             features = json.load(jdata)
         return np.asarray(features)
     
-    # loads a single label
-    def labelLoad(idx_name):
+    def labelLoad():
+        'loads a all labels'
         LABEL = 'cuhk03_new_protocol_config_labeled.mat'
         lbl = sio.loadmat(DataProc.PATH + LABEL)
-        print(idx_name)
-        return lbl[idx_name].flatten()
-        
-    # loads all labels
-    def all_label():
-        idx_list = ['train_idx', 'query_idx']
-        return list(map(DataProc.labelLoad, idx_list))
+        idx_list = ['camId', 'filelist', 'gallery_idx'
+                   ,'labels', 'query_idx', 'train_idx']
+        return list(map(lambda x: lbl[x].flatten(), idx_list))
 
 #data = DataProc.dataLoad()
-train_idx = DataProc.all_label()
+query_idx = DataProc.labelLoad()
