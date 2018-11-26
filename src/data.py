@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#!/usr/bin/python3
 """
 Created on Mon Nov 26 16:38:26 2018
 
@@ -26,7 +27,7 @@ class DataProc:
         lbl = sio.loadmat(DataProc.PATH + LABEL)
         idx_list = ['camId', 'filelist', 'gallery_idx'
                    ,'labels', 'query_idx', 'train_idx']
-        return list(map(lambda x: lbl[x].flatten(), idx_list))
+        return tuple(map(lambda x: lbl[x].flatten(), idx_list))
 
 #data = DataProc.dataLoad()
-query_idx = DataProc.labelLoad()
+camId, filelist, gallery_idx, labels, query_idx, train_idx = DataProc.labelLoad()
