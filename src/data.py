@@ -65,4 +65,4 @@ def splitData(data, meta, idx):
 data, meta, idx = dataLoad()
 t_set, q_set, g_set = splitData(data, meta, idx)
 
-print(t_set[0])
+print(t_set[56])
