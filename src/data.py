@@ -89,10 +89,11 @@ def neighbor(query, gallery, k):
 # Performance
 # ------------------------------------------------------------------------------
 def lap(event, records):
+    'stopwatch'
     t = time.perf_counter()
-    records.append(t)
     print ('[Timer] {} took {}s, total time {}s'\
            .format(event, t-records[-1], t-records[0]))
+    records.append(t)
     return None
 
 # ------------------------------------------------------------------------------
