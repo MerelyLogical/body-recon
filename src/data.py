@@ -11,9 +11,14 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import time
+from sklearn import neighbors
 
-
+# ------------------------------------------------------------------------------
+# Data Structure
+# ------------------------------------------------------------------------------
 class Image(object):
+    'storing all information related to a single data point'
     def __init__ (self, feature, camId, path, label):
         self.feature = feature
         self.camId = camId
@@ -21,13 +26,22 @@ class Image(object):
         self.label = label
         
     def __str__ (self):
+        'allows printing'
         PATH = '../data/images_cuhk03/'
         plt.imshow(mpimg.imread(PATH + self.path))
-        display = 'Class: ' + str(self.label) + '\n'\
-            + 'Camera: ' + str(self.camId) + '\n'\
-            + 'Path: ' + str(self.path)
+        display = 'Class: {}\nCamera: {}\nPath: {}'\
+            .format(self.label, self.camId, self.path)
         return display
-    
+
+def toFeatureArray(images):
+    return np.asarray ([image.feature for image in images])
+
+def toLabelArray(images):
+    return np.asarray ([image.label for image in images])
+
+# ------------------------------------------------------------------------------
+# Loading Data
+# ------------------------------------------------------------------------------
 def dataLoad():
     'loads all data'
     
@@ -62,7 +76,42 @@ def splitData(data, meta, idx):
         return [buildImage(y) for y in x]
     return (buildImageList(x) for x in idx)
 
+# ------------------------------------------------------------------------------
+# Nearest Neighbour
+# ------------------------------------------------------------------------------
+def neighbor(query, gallery, k):
+    'finds indexes of the k nearest neighbours in gallery'
+    clf = neighbors.KNeighborsClassifier()
+    clf.fit(toFeatureArray(gallery), toLabelArray(gallery))
+    return clf.kneighbors(toFeatureArray(query), k)
+
+# ------------------------------------------------------------------------------
+# Performance
+# ------------------------------------------------------------------------------
+def lap(event, records):
+    t = time.perf_counter()
+    records.append(t)
+    print ('[Timer] {} took {}s, total time {}s'\
+           .format(event, t-records[-1], t-records[0]))
+    return 0
+
+# ------------------------------------------------------------------------------
+# Main
+# ------------------------------------------------------------------------------
+tr = [time.perf_counter()]
+
+lap('Start', tr)
+
 data, meta, idx = dataLoad()
 t_set, q_set, g_set = splitData(data, meta, idx)
+del data, meta, idx
 
-print(t_set[56])
+lap('Load data', tr)
+
+print (t_set[0])
+
+lap('Print data', tr)
+
+q_neighbor = neighbor(q_set, g_set, 10)
+
+lap('Calculate 10-NN', tr)
