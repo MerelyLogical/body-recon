@@ -93,7 +93,7 @@ def lap(event, records):
     records.append(t)
     print ('[Timer] {} took {}s, total time {}s'\
            .format(event, t-records[-1], t-records[0]))
-    return 0
+    return None
 
 # ------------------------------------------------------------------------------
 # Main
