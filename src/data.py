@@ -27,13 +27,17 @@ class Image(object):
         
     def __str__ (self):
         'allows printing'
-        PATH = '../data/images_cuhk03/'
-        plt.imshow(mpimg.imread(PATH + self.path))
-        plt.show()
-        display = 'Class: {}\nCamera: {}\nPath: {}'\
+        display = 'Class: {}; Camera: {}; Path: {}'\
             .format(self.label, self.camId, self.path)
         return display
-
+    
+    def subplot (self):
+        'plots self'
+        PATH = '../data/images_cuhk03/'
+        plt.imshow(mpimg.imread(PATH + self.path))
+        plt.title('Class: {}'.format(self.label))
+        return None
+        
 def toFeatureArray(images):
     return np.asarray ([image.feature for image in images])
 
@@ -119,12 +123,14 @@ def successRate(q_set, k_set):
             
     return [perQueryRate(q_img, k_set[i]) for i, q_img in enumerate(q_set)]
 
-def displayResults(images, k):
+def displayResults(query, k_result, k):
     'prints results for one query onto a figure'
+    plt.figure()
+    plt.subplot(1, k+1, 1)
+    query.subplot()
     for i in range(k):
-        plt.subplot(1, k, i+1)
-        print(images[i])
-    plt.show()
+        plt.subplot(1, k+1, i+2)
+        k_result[i].subplot()
     return None
 
 # ------------------------------------------------------------------------------
@@ -133,7 +139,7 @@ def displayResults(images, k):
 def lap(event, records):
     'stopwatch'
     t = time.perf_counter()
-    print ('[Timer] {} took {}s, total time {}s'\
+    print ('[Timer] {0} took {1:.2f}s, total time {2:.2f}s'\
            .format(event, t-records[-1], t-records[0]))
     records.append(t)
     return None
@@ -141,28 +147,34 @@ def lap(event, records):
 # ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
-K = 1
 
+K = 10
 tr = [time.perf_counter()]
 
-lap('Load functions', tr)
+lap('Initialise', tr)
+# ------------------------------------------------------------------------------
 
 data, meta, idx = dataLoad()
 t_set, q_set, g_set = splitData(data, meta, idx)
 del data, meta, idx
 
 lap('Load data', tr)
+# ------------------------------------------------------------------------------
 
 k_set = neighbours(q_set, g_set, K, euclidean)
 
 lap('Calculate 10-NN', tr)
+# ------------------------------------------------------------------------------
 
-success_rate = successRate(q_set, k_set)
+success_array = successRate(q_set, k_set)
+success_rate = np.count_nonzero(success_array) / len(q_set)
+print ('[*Main] With {}-NN, success rate is {}'.format(K, success_rate))
 
 lap('Evaluate success rate', tr)
+# ------------------------------------------------------------------------------
 
-for k_img in k_set[:3]:
-    displayResults(k_img, K)
+for i in range(3):
+    displayResults(q_set[i], k_set[i], K)
 
 lap('Print results', tr)
-
+# ------------------------------------------------------------------------------
