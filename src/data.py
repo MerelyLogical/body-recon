@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import time
-from sklearn import neighbors
+#from sklearn import neighbors
 
 # ------------------------------------------------------------------------------
 # Data Structure
@@ -29,6 +29,7 @@ class Image(object):
         'allows printing'
         PATH = '../data/images_cuhk03/'
         plt.imshow(mpimg.imread(PATH + self.path))
+        plt.show()
         display = 'Class: {}\nCamera: {}\nPath: {}'\
             .format(self.label, self.camId, self.path)
         return display
@@ -59,6 +60,7 @@ def dataLoad():
     
     def loadMeta(x):
         return lbl[x].flatten()
+    
     def loadIdx(x):
         return lbl[x].flatten()-1
     
@@ -72,18 +74,58 @@ def splitData(data, meta, idx):
     
     def buildImage(x):
         return Image(data[x], meta[0][x], meta[1][x][0], meta[2][x])
+    
     def buildImageList(x):
         return [buildImage(y) for y in x]
+    
     return (buildImageList(x) for x in idx)
 
 # ------------------------------------------------------------------------------
 # Nearest Neighbour
 # ------------------------------------------------------------------------------
-def neighbor(query, gallery, k):
+#def neighbor(query, gallery, k):
+#    'finds indexes of the k nearest neighbours in gallery'
+#    clf = neighbors.KNeighborsClassifier()
+#    clf.fit(toFeatureArray(gallery), toLabelArray(gallery))
+#    return clf.kneighbors(toFeatureArray(query), k)
+
+def euclidean(x, y):
+    return np.linalg.norm(y-x)
+
+def neighbour(q_img, g_set, k, f_dist):
     'finds indexes of the k nearest neighbours in gallery'
-    clf = neighbors.KNeighborsClassifier()
-    clf.fit(toFeatureArray(gallery), toLabelArray(gallery))
-    return clf.kneighbors(toFeatureArray(query), k)
+    g_filtered =\
+        [x for x in g_set if\
+             x.label != q_img.label or x.camId != q_img.camId]
+    dist_list = [f_dist(q_img.feature, g_img.feature) for g_img in g_filtered]
+    return [g_filtered[i] for i in np.argsort(dist_list).tolist()[:k]]
+    
+def neighbours(q_set, g_set, k, f_dist):
+    return [neighbour(q_img, g_set, k, f_dist) for q_img in q_set]
+
+# ------------------------------------------------------------------------------
+# Results
+# ------------------------------------------------------------------------------
+def successRate(q_set, k_set):
+    
+    def sameLabelCount(img_a, img_b):
+        if img_a.label == img_b.label:
+            return 1
+        else:
+            return 0
+        
+    def perQueryRate(q_img, k_images):
+        return sum([sameLabelCount(k_img, q_img) for k_img in k_images])
+            
+    return [perQueryRate(q_img, k_set[i]) for i, q_img in enumerate(q_set)]
+
+def displayResults(images, k):
+    'prints results for one query onto a figure'
+    for i in range(k):
+        plt.subplot(1, k, i+1)
+        print(images[i])
+    plt.show()
+    return None
 
 # ------------------------------------------------------------------------------
 # Performance
@@ -99,9 +141,11 @@ def lap(event, records):
 # ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
+K = 1
+
 tr = [time.perf_counter()]
 
-lap('Start', tr)
+lap('Load functions', tr)
 
 data, meta, idx = dataLoad()
 t_set, q_set, g_set = splitData(data, meta, idx)
@@ -109,10 +153,16 @@ del data, meta, idx
 
 lap('Load data', tr)
 
-print (t_set[0])
-
-lap('Print data', tr)
-
-q_neighbor = neighbor(q_set, g_set, 10)
+k_set = neighbours(q_set, g_set, K, euclidean)
 
 lap('Calculate 10-NN', tr)
+
+success_rate = successRate(q_set, k_set)
+
+lap('Evaluate success rate', tr)
+
+for k_img in k_set[:3]:
+    displayResults(k_img, K)
+
+lap('Print results', tr)
+
