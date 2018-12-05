@@ -42,6 +42,10 @@ def toFeatureArray(images):
 def toLabelArray(images):
     return np.asarray ([image.label for image in images])
 
+def toImageArray(features, labels):
+    return np.asarray ([Image(f, -1, '', l) for f, l in zip(features, labels)])
+
+
 # ------------------------------------------------------------------------------
 # Loading Data
 # ------------------------------------------------------------------------------

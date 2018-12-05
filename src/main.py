@@ -11,11 +11,12 @@ import numpy as np
 from dataproc  import dataLoad, splitData
 from distances import euclidean
 from nn        import neighbours, successArray, displayResults
+from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
 
 # ------------------------------------------------------------------------------
 K = 10
-tr = start
+tr = start()
 
 lap('Initialise', tr)
 # ------------------------------------------------------------------------------
@@ -27,20 +28,34 @@ del data, meta, idx
 lap('Load data', tr)
 # ------------------------------------------------------------------------------
 
-k_set = neighbours(q_set, g_set, K, euclidean)
+#knn_set = neighbours(q_set, g_set, K, euclidean)
 
-lap('Calculate 10-NN', tr)
+lap('Calculate {}-NN'.format(K), tr)
 # ------------------------------------------------------------------------------
 
-success_array = successArray(q_set, k_set)
+#success_array = successArray(q_set, knn_set)
+#success_rate = np.count_nonzero(success_array) / len(q_set)
+#print ('[*Main] With {}-NN, success rate is {}'.format(K, success_rate))
+
+lap('Evaluate NN success rate', tr)
+# ------------------------------------------------------------------------------
+
+#for i in range(3):
+#    displayResults(q_set[i], knn_set[i], K)
+
+lap('Print NN results', tr)
+# ------------------------------------------------------------------------------
+
+km_set, km_g_labels = kmean(g_set)
+ass_mtx = linAssign(km_g_labels, g_set)
+km_reassigned_set = reassign(km_set, ass_mtx)
+kmeans_set = neighbours(q_set, km_reassigned_set, K, euclidean)
+success_array = successArray(q_set, kmeans_set)
 success_rate = np.count_nonzero(success_array) / len(q_set)
-print ('[*Main] With {}-NN, success rate is {}'.format(K, success_rate))
+print ('[*Main] With {}-means, success rate is {}'.format(K, success_rate))
 
-lap('Evaluate success rate', tr)
-# ------------------------------------------------------------------------------
+lap('Calculate k-means', tr)
 
-for i in range(3):
-    displayResults(q_set[i], k_set[i], K)
 
-lap('Print results', tr)
-# ------------------------------------------------------------------------------
+
+
