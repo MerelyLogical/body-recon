@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import metric_learn
 import sklearn.decomposition as decomp
+import sklearn.manifold as mnf
 
 from dataproc  import dataLoad, splitData, toFeatureArray, toLabelArray, toImageArray
 from distances import euclidean, mahalanobis
@@ -99,20 +100,33 @@ lap('PCA', tr)
 #
 #lap('Train with RCA', tr)
 # ------------------------------------------------------------------------------
-
-mlkr = metric_learn.mlkr.MLKR(num_dims=200, A0=None, tol=1e-6, max_iter=10, verbose=True)
-t_set_mlkr_feature = mlkr.fit_transform(toFeatureArray(t_set), toLabelArray(t_set))
-q_set_mlkr_feature = mlkr.transform(toFeatureArray(q_set))
-g_set_mlkr_feature = mlkr.transform(toFeatureArray(g_set))
-for i, t_img in enumerate(t_set):
-    t_img.feature = t_set_mlkr_feature[i]
-for i, q_img in enumerate(q_set):
-    q_img.feature = q_set_mlkr_feature[i]
-for i, g_img in enumerate(g_set):
-    g_img.feature = g_set_mlkr_feature[i]
-del t_set_mlkr_feature, q_set_mlkr_feature, g_set_mlkr_feature
-
-lap('Train with MLKR', tr)
+#
+#mlkr = metric_learn.mlkr.MLKR(num_dims=200, A0=None, tol=1e-6, max_iter=10, verbose=True)
+#t_set_mlkr_feature = mlkr.fit_transform(toFeatureArray(t_set), toLabelArray(t_set))
+#q_set_mlkr_feature = mlkr.transform(toFeatureArray(q_set))
+#g_set_mlkr_feature = mlkr.transform(toFeatureArray(g_set))
+#for i, t_img in enumerate(t_set):
+#    t_img.feature = t_set_mlkr_feature[i]
+#for i, q_img in enumerate(q_set):
+#    q_img.feature = q_set_mlkr_feature[i]
+#for i, g_img in enumerate(g_set):
+#    g_img.feature = g_set_mlkr_feature[i]
+#del t_set_mlkr_feature, q_set_mlkr_feature, g_set_mlkr_feature
+#
+#lap('Train with MLKR', tr)
+# ------------------------------------------------------------------------------
+# This one is shit
+#
+#mds = mnf.MDS(n_components=3, metric=True, n_init=3, max_iter=30, verbose=2, eps=0.001, n_jobs=None, random_state=None, dissimilarity='euclidean')
+#q_set_mds_feature = mds.fit_transform(toFeatureArray(q_set))
+#g_set_mds_feature = mds.fit_transform(toFeatureArray(g_set))
+#for i, q_img in enumerate(q_set):
+#    q_img.feature = q_set_mds_feature[i]
+#for i, g_img in enumerate(g_set):
+#    g_img.feature = g_set_mds_feature[i]
+#del q_set_mds_feature, g_set_mds_feature
+#
+#lap('Train with MDS', tr)
 # ------------------------------------------------------------------------------
 
 knn_set = neighbours(q_set, g_set, m_lmnn, K, euclidean)
