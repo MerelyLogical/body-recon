@@ -11,7 +11,6 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import sklearn.decomposition as decomp
 
 # ------------------------------------------------------------------------------
 # Data Structure

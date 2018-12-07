@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 # ------------------------------------------------------------------------------
 def neighbour(q_img, g_set, M, k, f_dist, i):
     'finds indexes of the k nearest neighbours in gallery'
-    print ('querying {}/1400'.format(i))
+    if(i%100 == 0):
+        print ('querying {}/1400'.format(i))
     g_filtered =\
         [x for x in g_set if\
              x.label != q_img.label or x.camId != q_img.camId]

@@ -8,17 +8,19 @@ Created on Tue Dec  4 18:22:33 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
+import metric_learn
 import sklearn.decomposition as decomp
 
 from dataproc  import dataLoad, splitData, toFeatureArray, toLabelArray, toImageArray
-from distances import euclidean, trainLMNN, mahalanobis
+from distances import euclidean, mahalanobis
 from nn        import neighbours, successArray, displayResults
 from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
 
 # ------------------------------------------------------------------------------
 K = 10
-M_PCA = 400
+M_PCA = 230
+m_lmnn = np.zeros((M_PCA, M_PCA))
 tr = start()
 
 lap('Initialise', tr)
@@ -37,8 +39,7 @@ lap('Load data', tr)
 
 pca = decomp.PCA(n_components=M_PCA)
 t_set_pca_feature = pca.fit_transform(toFeatureArray(t_set))
-ratio = pca.explained_variance_ratio_
-plt.plot(ratio)
+#ratio = pca.explained_variance_ratio_
 q_set_pca_feature = pca.transform(toFeatureArray(q_set))
 g_set_pca_feature = pca.transform(toFeatureArray(g_set))
 for i, t_img in enumerate(t_set):
@@ -50,14 +51,71 @@ for i, g_img in enumerate(g_set):
 del t_set_pca_feature, q_set_pca_feature, g_set_pca_feature
 
 lap('PCA', tr)
+# -----------------------------------------------------------------------------
+
+#lmnn = metric_learn.LMNN(k=3, min_iter=1, max_iter=10, learn_rate=1e-6, convergence_tol=1e-3, use_pca=False, verbose=True)
+#t_set_lmnn_feature = lmnn.fit_transform(toFeatureArray(t_set), toLabelArray(t_set))
+#q_set_lmnn_feature = lmnn.transform(toFeatureArray(q_set))
+#g_set_lmnn_feature = lmnn.transform(toFeatureArray(g_set))
+#for i, t_img in enumerate(t_set):
+#    t_img.feature = t_set_lmnn_feature[i]
+#for i, q_img in enumerate(q_set):
+#    q_img.feature = q_set_lmnn_feature[i]
+#for i, g_img in enumerate(g_set):
+#    g_img.feature = g_set_lmnn_feature[i]
+#del t_set_lmnn_feature, q_set_lmnn_feature, g_set_lmnn_feature
+#
+#lap('Train with LMNN', tr)
+## ------------------------------------------------------------------------------
+#
+#mmc = metric_learn.mmc.MMC_Supervised(max_iter=10, convergence_threshold=1e-04, num_labeled=np.inf, num_constraints=100, verbose=True)
+#t_set_mmc_feature = mmc.fit_transform(toFeatureArray(t_set), toLabelArray(t_set))
+#q_set_mmc_feature = mmc.transform(toFeatureArray(q_set))
+#g_set_mmc_feature = mmc.transform(toFeatureArray(g_set))
+#for i, t_img in enumerate(t_set):
+#    t_img.feature = t_set_mmc_feature[i]
+#for i, q_img in enumerate(q_set):
+#    q_img.feature = q_set_mmc_feature[i]
+#for i, g_img in enumerate(g_set):
+#    g_img.feature = g_set_mmc_feature[i]
+#del t_set_mmc_feature, q_set_mmc_feature, g_set_mmc_feature
+#
+#lap('Train with MMC', tr)
+# ------------------------------------------------------------------------------
+#
+#rca = metric_learn.rca.RCA(num_dims=None, pca_comps=None)
+#chuncky = np.repeat(list(range(1, 25)), 307)
+#rca.fit(toFeatureArray(t_set), chuncky)
+#t_set_rca_feature = rca.transform(toFeatureArray(t_set))
+#q_set_rca_feature = rca.transform(toFeatureArray(q_set))
+#g_set_rca_feature = rca.transform(toFeatureArray(g_set))
+#for i, t_img in enumerate(t_set):
+#    t_img.feature = t_set_rca_feature[i]
+#for i, q_img in enumerate(q_set):
+#    q_img.feature = q_set_rca_feature[i]
+#for i, g_img in enumerate(g_set):
+#    g_img.feature = g_set_rca_feature[i]
+#del t_set_rca_feature, q_set_rca_feature, g_set_rca_feature
+#
+#lap('Train with RCA', tr)
 # ------------------------------------------------------------------------------
 
-m_lmnn = trainLMNN(t_set)
+mlkr = metric_learn.mlkr.MLKR(num_dims=200, A0=None, tol=1e-6, max_iter=10, verbose=True)
+t_set_mlkr_feature = mlkr.fit_transform(toFeatureArray(t_set), toLabelArray(t_set))
+q_set_mlkr_feature = mlkr.transform(toFeatureArray(q_set))
+g_set_mlkr_feature = mlkr.transform(toFeatureArray(g_set))
+for i, t_img in enumerate(t_set):
+    t_img.feature = t_set_mlkr_feature[i]
+for i, q_img in enumerate(q_set):
+    q_img.feature = q_set_mlkr_feature[i]
+for i, g_img in enumerate(g_set):
+    g_img.feature = g_set_mlkr_feature[i]
+del t_set_mlkr_feature, q_set_mlkr_feature, g_set_mlkr_feature
 
-lap('Train with LMNN', tr)
+lap('Train with MLKR', tr)
 # ------------------------------------------------------------------------------
 
-knn_set = neighbours(q_set, g_set, m_lmnn, K, mahalanobis)
+knn_set = neighbours(q_set, g_set, m_lmnn, K, euclidean)
 
 lap('Calculate {}-NN'.format(K), tr)
 # ------------------------------------------------------------------------------
@@ -69,10 +127,10 @@ print ('[*Main] With {}-NN, success rate is {}'.format(K, success_rate))
 lap('Evaluate NN success rate', tr)
 # ------------------------------------------------------------------------------
 
-for i in range(3):
-    displayResults(q_set[i], knn_set[i], K)
-
-lap('Print NN results', tr)
+#for i in range(3):
+#    displayResults(q_set[i], knn_set[i], K)
+#
+#lap('Print NN results', tr)
 # ------------------------------------------------------------------------------
 
 #km_set, km_g_labels = kmean(g_set)
@@ -82,8 +140,8 @@ lap('Print NN results', tr)
 #success_array = successArray(q_set, kmeans_set)
 #success_rate = np.count_nonzero(success_array) / len(q_set)
 #print ('[*Main] With {}-means, success rate is {}'.format(K, success_rate))
-
-lap('Calculate k-means', tr)
+#
+#lap('Calculate k-means', tr)
 
 
 
