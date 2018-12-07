@@ -12,16 +12,16 @@ import matplotlib.pyplot as plt
 # ------------------------------------------------------------------------------
 # Nearest Neighbour
 # ------------------------------------------------------------------------------
-def neighbour(q_img, g_set, k, f_dist):
+def neighbour(q_img, g_set, M, k, f_dist):
     'finds indexes of the k nearest neighbours in gallery'
     g_filtered =\
         [x for x in g_set if\
              x.label != q_img.label or x.camId != q_img.camId]
-    dist_list = [f_dist(q_img.feature, g_img.feature) for g_img in g_filtered]
-    return [g_filtered[i] for i in np.argsort(dist_list).tolist()[:k]]
+    d = [f_dist(q_img.feature, g_img.feature, M) for g_img in g_filtered]
+    return [g_filtered[i] for i in np.argsort(d).tolist()[:k]]
     
-def neighbours(q_set, g_set, k, f_dist):
-    return [neighbour(q_img, g_set, k, f_dist) for q_img in q_set]
+def neighbours(q_set, g_set, M, k, f_dist):
+    return [neighbour(q_img, g_set, M, k, f_dist) for q_img in q_set]
 
 # ------------------------------------------------------------------------------
 # Results

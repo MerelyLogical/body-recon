@@ -11,6 +11,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import sklearn.decomposition as decomp
 
 # ------------------------------------------------------------------------------
 # Data Structure
@@ -45,6 +46,8 @@ def toLabelArray(images):
 def toImageArray(features, labels):
     return np.asarray ([Image(f, -1, '', l) for f, l in zip(features, labels)])
 
+def changeFeature(image, feature):
+    image.feature = feature
 
 # ------------------------------------------------------------------------------
 # Loading Data
