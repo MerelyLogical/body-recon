@@ -7,6 +7,7 @@ Created on Tue Dec  4 18:22:33 2018
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 import sklearn.decomposition as decomp
 
 from dataproc  import dataLoad, splitData, toFeatureArray, toLabelArray, toImageArray
@@ -17,7 +18,7 @@ from perf      import start, lap
 
 # ------------------------------------------------------------------------------
 K = 10
-M_PCA = 100
+M_PCA = 400
 tr = start()
 
 lap('Initialise', tr)
@@ -27,15 +28,17 @@ data, meta, idx = dataLoad()
 t_set, q_set, g_set = splitData(data, meta, idx)
 del data, meta, idx
 
-t_set = t_set[:1000]
-q_set = q_set
-g_set = g_set
+#t_set = t_set
+#q_set = q_set
+#g_set = g_set
 
 lap('Load data', tr)
 # ------------------------------------------------------------------------------
 
 pca = decomp.PCA(n_components=M_PCA)
 t_set_pca_feature = pca.fit_transform(toFeatureArray(t_set))
+ratio = pca.explained_variance_ratio_
+plt.plot(ratio)
 q_set_pca_feature = pca.transform(toFeatureArray(q_set))
 g_set_pca_feature = pca.transform(toFeatureArray(g_set))
 for i, t_img in enumerate(t_set):
@@ -45,6 +48,7 @@ for i, q_img in enumerate(q_set):
 for i, g_img in enumerate(g_set):
     g_img.feature = g_set_pca_feature[i]
 del t_set_pca_feature, q_set_pca_feature, g_set_pca_feature
+
 lap('PCA', tr)
 # ------------------------------------------------------------------------------
 
