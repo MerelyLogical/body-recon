@@ -18,6 +18,8 @@ from perf      import start, lap
 from train     import train, train_rca
 
 # ------------------------------------------------------------------------------
+print('[--Sys]-----------------------------------------------------------START')
+
 tr = start()
 K_NN = 1
 K_MEANS = 1
@@ -44,7 +46,8 @@ del data, meta, idx
 lap('Load data', tr)
 # ------------------------------------------------------------------------------
 # Training
-print('[Train]--------------------------------------------------TRAINING-START')
+print('[Train]--------------------------------------------------------TRAINING')
+
 if use_pca:
     train(pca, t_set, q_set, g_set)
     lap('PCA', tr)
@@ -67,10 +70,11 @@ elif train_method == 'mlkr':
     
 else:
     lap('Skip training', tr)
-print('[Train]--------------------------------------------------TRAINING---END')
 
 # ------------------------------------------------------------------------------
 # NN
+print('[---NN]------------------------------------------------------K-NN & mAP')
+
 nn_g_set = allNN(q_set, g_set, euclidean)
 lap('Calculate all pair-wise distances for NN'.format(K_NN), tr)
 # ------------------------------------------------------------------------------
@@ -94,6 +98,7 @@ print('[-Main] mAP is [{:.2%}]'.format(mAP))
 lap('Calculate mAP with NN', tr)
 # ------------------------------------------------------------------------------
 # K-means
+print('[kmean]---------------------------------------------------------K-MEANS')
 
 km_set, km_g_labels = kmean(g_set)
 ass_mtx = linAssign(km_g_labels, g_set)
@@ -105,3 +110,4 @@ success_rate = np.count_nonzero(success_array) / len(q_set)
 print ('[*Main] With {}-means, success rate is [{:.2%}]'.format(K_MEANS, success_rate))
 
 lap('Calculate k-means', tr)
+print('[--Sys]-------------------------------------------------------------END')
