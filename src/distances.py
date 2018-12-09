@@ -11,9 +11,9 @@ import numpy as np
 # ------------------------------------------------------------------------------
 # Distances
 # ------------------------------------------------------------------------------
-def euclidean(x, y, M):
+def euclidean(x, y):
     return np.linalg.norm(y-x)
-
-def mahalanobis(x, y, M):
-    d = x-y
-    return np.dot(np.dot(d.transpose(), M), d)
+#
+#def mahalanobis(x, y, M):
+#    d = x-y
+#    return np.dot(np.dot(d.transpose(), M), d)
