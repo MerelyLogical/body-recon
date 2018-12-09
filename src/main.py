@@ -19,14 +19,22 @@ from train     import train, train_rca
 
 # ------------------------------------------------------------------------------
 print('[--Sys]-----------------------------------------------------------START')
+# Setting parameters
 
+K_NN = int(input('K-NN [5]: ') or '5')
+K_MEANS = int(input('K-means [5]: ') or '5')
+s = input('Use-pca [Y]/N: ') or 'Y'
+if s.lower().strip() in ['n', 'no', '0']:
+    use_pca = False
+    M_PCA = 1
+else:
+    use_pca = True
+    M_PCA = int(input('M_PCA [230]:') or '230')
+train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
+# ------------------------------------------------------------------------------
+# Initialise
+print('[--Sys]-----------------------------------------------------------START')
 tr = start()
-K_NN = 1
-K_MEANS = 1
-M_PCA = 230
-train_method = 'lmnn'
-use_pca = True
-
 # Trainers
 pca = decomp.PCA(n_components=M_PCA)
 lmnn = metric_learn.LMNN(k=3, min_iter=1, max_iter=10, learn_rate=1e-6, convergence_tol=1e-3, use_pca=False, verbose=True)
