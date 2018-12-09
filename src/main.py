@@ -18,12 +18,12 @@ from perf      import start, lap
 from train     import train, train_rca
 
 # ------------------------------------------------------------------------------
-print('[--Sys]-----------------------------------------------------------START')
 # Setting parameters
+print('[--Sys]-----------------------------------------------------------START')
 
 K_NN = int(input('K-NN [5]: ') or '5')
 K_MEANS = int(input('K-means [5]: ') or '5')
-s = input('Use-pca [Y]/N: ') or 'Y'
+s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
 if s.lower().strip() in ['n', 'no', '0']:
     use_pca = False
     M_PCA = 1
@@ -33,7 +33,8 @@ else:
 train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
 # ------------------------------------------------------------------------------
 # Initialise
-print('[--Sys]-----------------------------------------------------------START')
+print('[--Sys]---------------------------------------------------------LOADING')
+
 tr = start()
 # Trainers
 pca = decomp.PCA(n_components=M_PCA)
