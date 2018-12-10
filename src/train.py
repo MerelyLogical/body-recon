@@ -24,6 +24,18 @@ def train(clf, t_set, q_set, g_set):
         g_img.feature = g_f[i]
     return None
 
+def unsup_transform(clf, t_set, q_set, g_set):
+    t_f = clf.fit_transform(toFeatureArray(t_set))
+    q_f = clf.fit_transform(toFeatureArray(q_set))
+    g_f = clf.fit_transform(toFeatureArray(g_set))
+    for i, t_img in enumerate(t_set):
+        t_img.feature = t_f[i]
+    for i, q_img in enumerate(q_set):
+        q_img.feature = q_f[i]
+    for i, g_img in enumerate(g_set):
+        g_img.feature = g_f[i]
+    return None
+
 def train_rca(rca, chunks, t_set, q_set, g_set):
     rca.fit(toFeatureArray(t_set), chunks)
     t_f = rca.transform(toFeatureArray(t_set))

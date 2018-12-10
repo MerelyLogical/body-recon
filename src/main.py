@@ -8,21 +8,23 @@ Created on Tue Dec  4 18:22:33 2018
 
 import numpy as np
 import metric_learn
-import sklearn.decomposition as decomp
+from sklearn.decomposition import PCA
+from sklearn.kernel_approximation import RBFSampler
+from sklearn.manifold import TSNE
 
 from dataproc  import dataLoad, splitData
 from distances import euclidean
 from nn        import allNN, kNN, mAPNN, successArray, displayResults
 from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
-from train     import train, train_rca
+from train     import train, train_rca, unsup_transform
 
 # ------------------------------------------------------------------------------
 # Setting parameters
 print('[--Sys]-----------------------------------------------------------START')
 
-K_NN = int(input('K-NN [5]: ') or '5')
-K_MEANS = int(input('K-means [5]: ') or '5')
+K_NN = int(input('K-NN [1]: ') or '1')
+K_MEANS = int(input('K-means [1]: ') or '1')
 s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
 if s.lower().strip() in ['n', 'no', '0']:
     use_pca = False
@@ -30,6 +32,16 @@ if s.lower().strip() in ['n', 'no', '0']:
 else:
     use_pca = True
     M_PCA = int(input('M_PCA [230]:') or '230')
+s = input('Use kernel? Y/[N]: ') or 'N'
+if s.lower().strip() in ['y', 'yes', '1']:
+    use_kernel = True
+else:
+    use_kernel = False
+s = input('Use t-SNE? Y/[N]: ') or 'N'
+if s.lower().strip() in ['y', 'yes', '1']:
+    use_tsne = True
+else:
+    use_tsne = False
 train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
 # ------------------------------------------------------------------------------
 # Initialise
@@ -37,7 +49,9 @@ print('[--Sys]---------------------------------------------------------LOADING')
 
 tr = start()
 # Trainers
-pca = decomp.PCA(n_components=M_PCA)
+pca = PCA(n_components=M_PCA)
+kernel = RBFSampler(gamma=1.0, n_components=230, random_state=None)
+tsne = TSNE(n_components=2, perplexity=30.0, early_exaggeration=12.0, learning_rate=200.0, n_iter=250, n_iter_without_progress=100, min_grad_norm=1e-07, metric='euclidean', init='random', verbose=2, random_state=None, method='barnes_hut', angle=0.5)
 lmnn = metric_learn.LMNN(k=3, min_iter=1, max_iter=10, learn_rate=1e-6, convergence_tol=1e-3, use_pca=False, verbose=True)
 mmc = metric_learn.mmc.MMC_Supervised(max_iter=10, convergence_threshold=1e-04, num_labeled=np.inf, num_constraints=100, verbose=True)
 rca = metric_learn.rca.RCA(num_dims=None, pca_comps=None)
@@ -60,6 +74,14 @@ print('[Train]--------------------------------------------------------TRAINING')
 if use_pca:
     train(pca, t_set, q_set, g_set)
     lap('PCA', tr)
+
+if use_kernel:
+    train(kernel, t_set, q_set, g_set)
+    lap('Kernel', tr)
+
+if use_tsne:
+    unsup_transform(tsne, t_set, q_set, g_set)
+    lap('TSNE', tr)
 
 if train_method == 'lmnn':
     train(lmnn, t_set, q_set, g_set)
@@ -106,17 +128,5 @@ print('[-Main] mAP is [{:.2%}]'.format(mAP))
 
 lap('Calculate mAP with NN', tr)
 # ------------------------------------------------------------------------------
-# K-means
-print('[kmean]---------------------------------------------------------K-MEANS')
 
-km_set, km_g_labels = kmean(g_set)
-ass_mtx = linAssign(km_g_labels, g_set)
-km_reassigned_set = reassign(km_set, ass_mtx)
-kmean_g_set = allNN(q_set, km_reassigned_set, euclidean)
-kmeans_set = kNN(kmean_g_set, K_MEANS)
-success_array = successArray(q_set, kmeans_set)
-success_rate = np.count_nonzero(success_array) / len(q_set)
-print ('[*Main] With {}-means, success rate is [{:.2%}]'.format(K_MEANS, success_rate))
-
-lap('Calculate k-means', tr)
 print('[--Sys]-------------------------------------------------------------END')
