@@ -40,7 +40,13 @@ def build_tv(t_set, V_SIZE):
                 tracker[(v_img.label, v_img.camId)] = 2
         else:
             tracker[(v_img.label, v_img.camId)] = 1
-    nv_set = [v_img for v_img in v_set\
-        if tracker[(v_img.label, 1)] == 2 and tracker[(v_img.label, 2)] == 2]
+    nv_set = []
+    for v_img in v_set:
+        try:
+            b = tracker[(v_img.label, 1)] == 2 and tracker[(v_img.label, 2)] == 2
+        except KeyError:
+            b = False
+        if b:
+            nv_set.append(v_img)
     vq_set, vg_set = build_qg(nv_set)
     return nt_set, vq_set, vg_set
