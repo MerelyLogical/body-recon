@@ -55,6 +55,8 @@ def mAPNN(q_set, nn_g_set):
             print('[*BUG*] Hey you found a bug!')
             print('[*BUG*] The following picture seems to be the culprit:')
             print(q_set[q_idx])
+            # REVISIT: bug cause might be identities with only one picture for
+            # one of the cameras. need further investigation
         ap = averagePrecision(counter)
         aps.append(ap)
     return np.average(aps)

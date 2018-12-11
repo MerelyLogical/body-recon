@@ -61,6 +61,13 @@ s = input('Use t-SNE? Y/[N]: ') or 'N'
 use_tsne = defaultNo(s)
 
 train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
+
+s = input('Use K-means in addition to K-NN? Y/[N]: ') or 'N'
+use_kmeans = defaultNo(s)
+
+s = input('Print result pictures? Y/[N]: ') or 'N'
+use_pics = defaultNo(s)
+
 # ------------------------------------------------------------------------------
 # Initialise
 print('[--Sys]---------------------------------------------------------LOADING')
@@ -161,7 +168,11 @@ success_array = successArray(q_set, knn_set)
 success_rate = np.count_nonzero(success_array) / len(q_set)
 print ('[-Main] With {}-NN, success rate is [{:.2%}]'.format(K_NN, success_rate))
 
-for i in range(3):
+# ------------------------------------------------------------------------------
+# Print K-NN pictures
+
+pic_idx = np.random.choice(len(q_set), size=3, replace=False)
+for i in pic_idx:
     displayResults(q_set[i], knn_set[i], K_NN)
 
 lap('Evaluate NN success rate', tr)
@@ -173,5 +184,21 @@ print('[-Main] mAP is [{:.2%}]'.format(mAP))
 
 lap('Calculate mAP with NN', tr)
 # ------------------------------------------------------------------------------
+# K-means
+print('[kmean]---------------------------------------------------------K-MEANS')
+
+if use_kmeans:
+    km_set, km_g_labels = kmean(g_set)
+    ass_mtx = linAssign(km_g_labels, g_set)
+    km_reassigned_set = reassign(km_set, ass_mtx)
+    kmean_g_set = allNN(q_set, km_reassigned_set, euclidean)
+    kmeans_set = kNN(kmean_g_set, K_MEANS)
+    success_array = successArray(q_set, kmeans_set)
+    success_rate = np.count_nonzero(success_array) / len(q_set)
+    print ('[*Main] With {}-means, success rate is [{:.2%}]'.format(K_MEANS, success_rate))
+    
+    lap('Calculate k-means', tr)
+else:
+    print('[kmean] Skip K-means')
 
 print('[--Sys]-------------------------------------------------------------END')
