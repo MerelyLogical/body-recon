@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 # ------------------------------------------------------------------------------
 def neighbour(q_img, g_set, f_dist, i):
     'finds indexes of the k nearest neighbours in gallery'
-    if(i % 200 == 0):
-        print ('[---NN] Querying... {}'.format(i))
+    if i % 100 == 0:
+        print ('[---NN] Querying... {:5d}'.format(i))
     g_filtered =\
         [x for x in g_set if\
              x.label != q_img.label or x.camId != q_img.camId]
@@ -52,11 +52,10 @@ def mAPNN(q_set, nn_g_set):
                 counter[g_idx] += 1
         counter = np.cumsum(counter)
         if counter[-1] == 0:
-            print('[*BUG*] Hey you found a bug!')
+            print('[*BUG*] Hey you found a bug! You shouldn\'t have found this')
             print('[*BUG*] The following picture seems to be the culprit:')
             print(q_set[q_idx])
-            # REVISIT: bug cause might be identities with only one picture for
-            # one of the cameras. need further investigation
+            print('[*BUG*] Please report this bug to the author.')
         ap = averagePrecision(counter)
         aps.append(ap)
     return np.average(aps)

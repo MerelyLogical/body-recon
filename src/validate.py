@@ -8,7 +8,6 @@ Created on Sun Dec  9 15:46:32 2018
 import copy
 import numpy as np
 from dataproc import toLabelArray
-from train import train, train_rca
 
 def build_qg(v_set):
     'build query and gallery from validation set'
@@ -36,22 +35,12 @@ def build_tv(t_set, V_SIZE):
     tracker = {}
     # get rid of those who only appeared in one camera
     for v_img in v_set:
-        if v_img.label in tracker:
-            if v_img.camId == tracker[v_img.label]:
-                tracker[v_img.label] = -1
+        if (v_img.label, v_img.camId) in tracker:
+            if tracker[(v_img.label, v_img.camId)] == 1:
+                tracker[(v_img.label, v_img.camId)] = 2
         else:
-            tracker[v_img.label] = v_img.camId
-    nv_set = [v_img for v_img in v_set if tracker[v_img.label] == -1]
+            tracker[(v_img.label, v_img.camId)] = 1
+    nv_set = [v_img for v_img in v_set\
+        if tracker[(v_img.label, 1)] == 2 and tracker[(v_img.label, 2)] == 2]
     vq_set, vg_set = build_qg(nv_set)
     return nt_set, vq_set, vg_set
-
-#def validate(t_set, k, rca_chunk, method):
-#    'validate'
-#    for i in range(k):
-#        nt_set, vq_set, vg_set = build_tv(t_set)
-#        if method == 'rca':
-#            train_rca(method, rca_chunk, nt_set, vq_set, vg_set)
-#        elif method in ['lmnn', 'mmc', 'mlkr']:
-#            train(method, nt_set, vq_set, vg_set)
-#        else:
-#            pass

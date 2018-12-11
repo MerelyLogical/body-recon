@@ -21,16 +21,16 @@ def kmean(g_set):
 def linAssign(k_labels, g_set):
     'returns reassigned kmean_label'
     g_labels = toLabelArray(g_set)
-    # this is done to match array index with label. index 0 is thus unused
-    j = max(g_labels) + 1
     k = max(k_labels) + 1
-    cost_mtx = np.zeros((j, k))
+    # the label is used in assignment. its content is the original label
+    g_label_translator = np.unique(g_labels)
+    cost_mtx = np.zeros((k, k))
     for k_lbl, g_lbl in zip(k_labels, g_labels):
-        cost_mtx[g_lbl][k_lbl] -= 1
+        cost_mtx[np.where(g_label_translator == g_lbl)[0][0]][k_lbl] -= 1
     assign = linear_assignment(cost_mtx)
     ass_mtx = np.zeros(k)
     for a in assign:
-        ass_mtx[a[1]]= a[0]
+        ass_mtx[a[1]] = g_label_translator[a[0]]
     return ass_mtx
 
 def reassign(km_set, ass_mtx):

@@ -41,8 +41,7 @@ def defaultYes(s):
     else:
         return True
 
-K_NN = int(input('K-NN [1]: ') or '1')
-K_MEANS = int(input('K-means [1]: ') or '1')
+k_nn_val = [1, 3, 5, 7, 9]
 
 s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
 use_pca = defaultYes(s)
@@ -53,6 +52,7 @@ else:
 
 s = input('Use 5-fold validation for M_PCA? Y/[N]: ') or 'N'
 use_val = defaultNo(s)
+m_val = [190, 210, 230, 250, 270]
 
 s = input('Use kernel? Y/[N]: ') or 'N'
 use_kernel = defaultNo(s)
@@ -65,8 +65,7 @@ train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
 s = input('Use K-means in addition to K-NN? Y/[N]: ') or 'N'
 use_kmeans = defaultNo(s)
 
-s = input('Print result pictures? Y/[N]: ') or 'N'
-use_pics = defaultNo(s)
+N_PIC = int(input('How many result pictures to print? [0]: ') or '0')
 
 # ------------------------------------------------------------------------------
 # Initialise
@@ -98,7 +97,6 @@ lap('Load data', tr)
 print('[-Vldt]------------------------------------------------------VALIDATION')
 
 if use_val:
-    m_val = [1, 3, 5, 7, 9]
     result_val = []
     for i in range(5):
         nt_set, vq_set, vg_set = build_tv(t_set, 100)
@@ -106,7 +104,7 @@ if use_val:
         train(pca, nt_set, vq_set, vg_set)
         lap('Perform PCA', tr)
         nn_vg_set = allNN(vq_set, vg_set, euclidean)
-        lap('Calculate all pair-wise distances for NN'.format(K_NN), tr)
+        lap('Calculate all pair-wise distances for NN', tr)
         vmAP = mAPNN(vq_set, nn_vg_set)
         print('[-Main] mAP is [{:.2%}]'.format(vmAP))
         lap('Calculate mAP with NN', tr)
@@ -159,21 +157,22 @@ else:
 print('[---NN]------------------------------------------------------K-NN & mAP')
 
 nn_g_set = allNN(q_set, g_set, euclidean)
-lap('Calculate all pair-wise distances for NN'.format(K_NN), tr)
+lap('Calculate all pair-wise distances for NN', tr)
 # ------------------------------------------------------------------------------
 # K-NN
 
-knn_set = kNN(nn_g_set, K_NN)
-success_array = successArray(q_set, knn_set)
-success_rate = np.count_nonzero(success_array) / len(q_set)
-print ('[-Main] With {}-NN, success rate is [{:.2%}]'.format(K_NN, success_rate))
+for k in k_nn_val:
+    knn_set = kNN(nn_g_set, k)
+    success_array = successArray(q_set, knn_set)
+    success_rate = np.count_nonzero(success_array) / len(q_set)
+    print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
 
 # ------------------------------------------------------------------------------
 # Print K-NN pictures
 
-pic_idx = np.random.choice(len(q_set), size=3, replace=False)
+pic_idx = np.random.choice(len(q_set), size=N_PIC, replace=False)
 for i in pic_idx:
-    displayResults(q_set[i], knn_set[i], K_NN)
+    displayResults(q_set[i], knn_set[i], k_nn_val[-1])
 
 lap('Evaluate NN success rate', tr)
 # ------------------------------------------------------------------------------
@@ -192,12 +191,20 @@ if use_kmeans:
     ass_mtx = linAssign(km_g_labels, g_set)
     km_reassigned_set = reassign(km_set, ass_mtx)
     kmean_g_set = allNN(q_set, km_reassigned_set, euclidean)
-    kmeans_set = kNN(kmean_g_set, K_MEANS)
-    success_array = successArray(q_set, kmeans_set)
-    success_rate = np.count_nonzero(success_array) / len(q_set)
-    print ('[*Main] With {}-means, success rate is [{:.2%}]'.format(K_MEANS, success_rate))
+    for k in k_nn_val:
+        kmeans_set = kNN(kmean_g_set, k)
+        success_array = successArray(q_set, kmeans_set)
+        success_rate = np.count_nonzero(success_array) / len(q_set)
+        print ('[*Main] With {:2d}-means, success rate is [{:.2%}]'.format(k, success_rate))
     
     lap('Calculate k-means', tr)
+# ------------------------------------------------------------------------------
+# mAP
+    
+    mAP = mAPNN(q_set, kmean_g_set)
+    print('[-Main] mAP is [{:.2%}]'.format(mAP))
+    
+    lap('Calculate mAP with NN', tr)
 else:
     print('[kmean] Skip K-means')
 
