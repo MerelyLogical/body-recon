@@ -29,25 +29,37 @@ from validate  import build_tv
 # Setting parameters
 print('[--Sys]-----------------------------------------------------------START')
 
+def defaultNo(s):
+    if s.lower().strip() in ['y', 'yes', '1']:
+        return True
+    else:
+        return False
+
+def defaultYes(s):
+    if s.lower().strip() in ['n', 'no', '0']:
+        return False
+    else:
+        return True
+
 K_NN = int(input('K-NN [1]: ') or '1')
 K_MEANS = int(input('K-means [1]: ') or '1')
+
 s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
-if s.lower().strip() in ['n', 'no', '0']:
-    use_pca = False
-    M_PCA = 1
-else:
-    use_pca = True
+use_pca = defaultYes(s)
+if use_pca:
     M_PCA = int(input('M_PCA [230]:') or '230')
+else:
+    M_PCA = -1
+
+s = input('Use 5-fold validation for M_PCA? Y/[N]: ') or 'N'
+use_val = defaultNo(s)
+
 s = input('Use kernel? Y/[N]: ') or 'N'
-if s.lower().strip() in ['y', 'yes', '1']:
-    use_kernel = True
-else:
-    use_kernel = False
+use_kernel = defaultNo(s)
+
 s = input('Use t-SNE? Y/[N]: ') or 'N'
-if s.lower().strip() in ['y', 'yes', '1']:
-    use_tsne = True
-else:
-    use_tsne = False
+use_tsne = defaultNo(s)
+
 train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
 # ------------------------------------------------------------------------------
 # Initialise
@@ -78,24 +90,27 @@ lap('Load data', tr)
 
 print('[-Vldt]------------------------------------------------------VALIDATION')
 
-m_val = [1, 3, 5, 7, 9]
-result_val = []
-for i in range(5):
-    nt_set, vq_set, vg_set = build_tv(t_set, 100)
-    pca = PCA(n_components=m_val[i])
-    train(pca, nt_set, vq_set, vg_set)
-    lap('Perform PCA', tr)
-    nn_vg_set = allNN(vq_set, vg_set, euclidean)
-    lap('Calculate all pair-wise distances for NN'.format(K_NN), tr)
-    vmAP = mAPNN(vq_set, nn_vg_set)
-    print('[-Main] mAP is [{:.2%}]'.format(vmAP))
-    lap('Calculate mAP with NN', tr)
-    result_val.append(vmAP)
-    lap('Validating PCA, iter: {}'.format(i), tr)
+if use_val:
+    m_val = [1, 3, 5, 7, 9]
+    result_val = []
+    for i in range(5):
+        nt_set, vq_set, vg_set = build_tv(t_set, 100)
+        pca = PCA(n_components=m_val[i])
+        train(pca, nt_set, vq_set, vg_set)
+        lap('Perform PCA', tr)
+        nn_vg_set = allNN(vq_set, vg_set, euclidean)
+        lap('Calculate all pair-wise distances for NN'.format(K_NN), tr)
+        vmAP = mAPNN(vq_set, nn_vg_set)
+        print('[-Main] mAP is [{:.2%}]'.format(vmAP))
+        lap('Calculate mAP with NN', tr)
+        result_val.append(vmAP)
+        lap('Validating PCA, iter: {}'.format(i), tr)
+    
+    M_PCA = m_val[np.argmax(vmAP)]
+    pca = PCA(n_components=M_PCA)
 
-M_PCA = m_val[np.argmax(vmAP)]
-pca = PCA(n_components=M_PCA)
-
+else:
+    print('[-Vldt] Skip PCA validation')
 lap('Validation', tr)
 # ------------------------------------------------------------------------------
 # Training
