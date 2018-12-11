@@ -6,6 +6,11 @@ Created on Tue Dec  4 18:22:33 2018
 @author: zw4215
 """
 
+#Todo
+#tranformation picture
+#validate
+#memory
+
 import numpy as np
 import metric_learn
 from sklearn.decomposition import PCA
@@ -18,6 +23,7 @@ from nn        import allNN, kNN, mAPNN, successArray, displayResults
 from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
 from train     import train, train_rca, unsup_transform
+from validate  import build_tv
 
 # ------------------------------------------------------------------------------
 # Setting parameters
@@ -67,6 +73,30 @@ t_set, q_set, g_set = splitData(data, meta, idx)
 del data, meta, idx
 
 lap('Load data', tr)
+# ------------------------------------------------------------------------------
+# Training
+
+print('[-Vldt]------------------------------------------------------VALIDATION')
+
+m_val = [1, 3, 5, 7, 9]
+result_val = []
+for i in range(5):
+    nt_set, vq_set, vg_set = build_tv(t_set, 100)
+    pca = PCA(n_components=m_val[i])
+    train(pca, nt_set, vq_set, vg_set)
+    lap('Perform PCA', tr)
+    nn_vg_set = allNN(vq_set, vg_set, euclidean)
+    lap('Calculate all pair-wise distances for NN'.format(K_NN), tr)
+    vmAP = mAPNN(vq_set, nn_vg_set)
+    print('[-Main] mAP is [{:.2%}]'.format(vmAP))
+    lap('Calculate mAP with NN', tr)
+    result_val.append(vmAP)
+    lap('Validating PCA, iter: {}'.format(i), tr)
+
+M_PCA = m_val[np.argmax(vmAP)]
+pca = PCA(n_components=M_PCA)
+
+lap('Validation', tr)
 # ------------------------------------------------------------------------------
 # Training
 print('[Train]--------------------------------------------------------TRAINING')
