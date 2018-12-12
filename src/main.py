@@ -18,7 +18,7 @@ from sklearn.kernel_approximation import RBFSampler
 from sklearn.manifold import TSNE
 
 from dataproc  import dataLoad, splitData
-from distances import euclidean
+from distances import euclidean, chessboard, manhattan, cosine
 from nn        import allNN, kNN, mAPNN, successArray, displayResults
 from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
@@ -46,7 +46,7 @@ k_nn_val = [1, 3, 5, 7, 9]
 s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
 use_pca = defaultYes(s)
 if use_pca:
-    M_PCA = int(input('M_PCA [230]:') or '230')
+    M_PCA = int(input('M_PCA [230]: ') or '230')
 else:
     M_PCA = -1
 
@@ -60,10 +60,23 @@ use_kernel = defaultNo(s)
 s = input('Use t-SNE? Y/[N]: ') or 'N'
 use_tsne = defaultNo(s)
 
-train_method = input('training method [none]/lmnn/mmc/rca/mlkr:') or 'none'
+train_method = input('training method [none]/lmnn/mmc/rca/mlkr/itml: ') or 'none'
 
 s = input('Use K-means in addition to K-NN? Y/[N]: ') or 'N'
 use_kmeans = defaultNo(s)
+
+distance_method = input('distance method [euclidean]/chessboard/manhattan/cosine: ') or 'euclidean'
+if distance_method == 'euclidean':
+    f_dist = euclidean
+elif distance_method == 'chessboard':
+    f_distance = chessboard
+elif distance_method == 'manhattan':
+    f_dist = manhattan
+elif distance_method == 'cosine':
+    f_dist = cosine
+else:
+    f_dist = euclidean
+# REVISIT: tsne can change distance metric too.
 
 N_PIC = int(input('How many result pictures to print? [0]: ') or '0')
 
@@ -81,6 +94,7 @@ mmc = metric_learn.mmc.MMC_Supervised(max_iter=10, convergence_threshold=1e-04, 
 rca = metric_learn.rca.RCA(num_dims=None, pca_comps=None)
 chuncky = np.repeat(list(range(1, 25)), 307)
 mlkr = metric_learn.mlkr.MLKR(num_dims=200, A0=None, tol=1e-6, max_iter=10, verbose=True)
+itml = metric_learn.itml.ITML_Supervised(gamma=1.0, max_iter=10, convergence_threshold=0.001, num_labeled=np.inf, num_constraints=100, bounds=None, A0=None, verbose=True)
 
 lap('Initialise', tr)
 # ------------------------------------------------------------------------------
@@ -103,7 +117,7 @@ if use_val:
         pca = PCA(n_components=m_val[i])
         train(pca, nt_set, vq_set, vg_set)
         lap('Perform PCA', tr)
-        nn_vg_set = allNN(vq_set, vg_set, euclidean)
+        nn_vg_set = allNN(vq_set, vg_set, f_dist)
         lap('Calculate all pair-wise distances for NN', tr)
         vmAP = mAPNN(vq_set, nn_vg_set)
         print('[-Main] mAP is [{:.2%}]'.format(vmAP))
@@ -148,6 +162,10 @@ elif train_method == 'rca':
 elif train_method == 'mlkr':
     train(mlkr, t_set, q_set, g_set)
     lap('Train with MLKR', tr)
+
+elif train_method == 'itml':
+    train(itml, t_set, q_set, g_set)
+    lap('Train with ITML', tr)
     
 else:
     lap('Skip training', tr)
@@ -156,7 +174,7 @@ else:
 # NN
 print('[---NN]------------------------------------------------------K-NN & mAP')
 
-nn_g_set = allNN(q_set, g_set, euclidean)
+nn_g_set = allNN(q_set, g_set, f_dist)
 lap('Calculate all pair-wise distances for NN', tr)
 # ------------------------------------------------------------------------------
 # K-NN
@@ -190,7 +208,7 @@ if use_kmeans:
     km_set, km_g_labels = kmean(g_set)
     ass_mtx = linAssign(km_g_labels, g_set)
     km_reassigned_set = reassign(km_set, ass_mtx)
-    kmean_g_set = allNN(q_set, km_reassigned_set, euclidean)
+    kmean_g_set = allNN(q_set, km_reassigned_set, f_dist)
     for k in k_nn_val:
         kmeans_set = kNN(kmean_g_set, k)
         success_array = successArray(q_set, kmeans_set)
