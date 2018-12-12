@@ -41,6 +41,7 @@ def defaultYes(s):
     else:
         return True
 
+# values of k-nn
 k_nn_val = [1, 3, 5, 7, 9]
 
 s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
@@ -52,6 +53,7 @@ else:
 
 s = input('Use 5-fold validation for M_PCA? Y/[N]: ') or 'N'
 use_val = defaultNo(s)
+# values for M_pca in 5 fold validation
 m_val = [190, 210, 230, 250, 270]
 
 s = input('Use kernel? Y/[N]: ') or 'N'
@@ -76,29 +78,48 @@ elif distance_method == 'cosine':
     f_dist = cosine
 else:
     f_dist = euclidean
-# REVISIT: tsne can change distance metric too.
+# REVISIT: distance of tsne can be changed too.
+# but euclidean still semms to perform the best
 
 N_PIC = int(input('How many result pictures to print? [0]: ') or '0')
 
 # ------------------------------------------------------------------------------
 # Initialise
-print('[--Sys]---------------------------------------------------------LOADING')
 
 tr = start()
+
 # Trainers
 pca = PCA(n_components=M_PCA)
+
 kernel = RBFSampler(gamma=1.0, n_components=230, random_state=None)
-tsne = TSNE(n_components=2, perplexity=30.0, early_exaggeration=12.0, learning_rate=200.0, n_iter=250, n_iter_without_progress=100, min_grad_norm=1e-07, metric='euclidean', init='random', verbose=2, random_state=None, method='barnes_hut', angle=0.5)
-lmnn = metric_learn.LMNN(k=3, min_iter=1, max_iter=10, learn_rate=1e-6, convergence_tol=1e-3, use_pca=False, verbose=True)
-mmc = metric_learn.mmc.MMC_Supervised(max_iter=10, convergence_threshold=1e-04, num_labeled=np.inf, num_constraints=100, verbose=True)
+
+tsne = TSNE(n_components=2, perplexity=30.0, early_exaggeration=12.0,
+            learning_rate=200.0, n_iter=250, n_iter_without_progress=100,
+            min_grad_norm=1e-07, metric='euclidean', init='random', verbose=2,
+            random_state=None, method='barnes_hut', angle=0.5)
+
+lmnn = metric_learn.LMNN(k=3, min_iter=1, max_iter=10, learn_rate=1e-6,
+                         convergence_tol=1e-3, use_pca=False, verbose=True)
+
+mmc = metric_learn.mmc.MMC_Supervised(max_iter=10, convergence_threshold=1e-04,
+                                      num_labeled=np.inf, num_constraints=100,
+                                      verbose=True)
+
 rca = metric_learn.rca.RCA(num_dims=None, pca_comps=None)
 chuncky = np.repeat(list(range(1, 25)), 307)
-mlkr = metric_learn.mlkr.MLKR(num_dims=200, A0=None, tol=1e-6, max_iter=10, verbose=True)
-itml = metric_learn.itml.ITML_Supervised(gamma=1.0, max_iter=10, convergence_threshold=0.001, num_labeled=np.inf, num_constraints=100, bounds=None, A0=None, verbose=True)
 
-lap('Initialise', tr)
+mlkr = metric_learn.mlkr.MLKR(num_dims=200, A0=None, tol=1e-6, max_iter=10,
+                              verbose=True)
+
+itml = metric_learn.itml.ITML_Supervised(gamma=1.0, max_iter=10,
+                                         convergence_threshold=0.001,
+                                         num_labeled=np.inf,
+                                         num_constraints=100, bounds=None,
+                                         A0=None, verbose=True)
+
 # ------------------------------------------------------------------------------
 # Load data
+print('[--Sys]---------------------------------------------------------LOADING')
 
 data, meta, idx = dataLoad()
 t_set, q_set, g_set = splitData(data, meta, idx)
@@ -106,7 +127,7 @@ del data, meta, idx
 
 lap('Load data', tr)
 # ------------------------------------------------------------------------------
-# Training
+# Validation
 
 print('[-Vldt]------------------------------------------------------VALIDATION')
 
@@ -225,5 +246,13 @@ if use_kmeans:
     lap('Calculate mAP with NN', tr)
 else:
     print('[kmean] Skip K-means')
+
+# ------------------------------------------------------------------------------
+# Saving data
+print('[-Save]--------------------------------------------------SAVING RESULTS')
+cfgstr = str(int(use_pca)+int(use_val)+int(use_kernel)+int(use_tsne)+'_'+
+             train_method+'_'+distance_method)
+np.save('npy/q_'+cfgstr, q_set)
+np.save('npy/d_'+cfgstr, knn_set)
 
 print('[--Sys]-------------------------------------------------------------END')
