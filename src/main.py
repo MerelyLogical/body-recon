@@ -250,9 +250,9 @@ else:
 # ------------------------------------------------------------------------------
 # Saving data
 print('[-Save]--------------------------------------------------SAVING RESULTS')
-cfgstr = str(int(use_pca)+int(use_val)+int(use_kernel)+int(use_tsne)+'_'+
-             train_method+'_'+distance_method)
-np.save('npy/q_'+cfgstr, q_set)
-np.save('npy/d_'+cfgstr, knn_set)
+cfgstr = '_{}{}{}{}_{}_{}'.format(int(use_pca),int(use_val),int(use_kernel),
+          int(use_tsne),train_method,distance_method)
+np.save('npy/q'+cfgstr, q_set)
+np.save('npy/d'+cfgstr, knn_set)
 
 print('[--Sys]-------------------------------------------------------------END')
