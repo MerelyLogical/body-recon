@@ -9,15 +9,10 @@ Created on Thu Dec 13 00:06:10 2018
 import numpy as np
 import matplotlib.pyplot as plt
 
-def displayResults(query, k_result, k):
-    'prints results for one query onto a figure'
-
-    return None
-
 # ------------------------------------------------------------------------------
 # Initialise
 
-N_PIC = 2
+N_PIC = 10
 K_NN = 10
 base_cfg = '1000_none_euclidean'
 test_cfg = '1000_lmnn_euclidean'
@@ -34,6 +29,7 @@ test_knn_set = np.load('npy/d_{}.npy'.format(test_cfg))
 # Print K-NN pictures
 
 pic_idx = np.random.choice(len(base_q_set), size=N_PIC, replace=False)
+
 for i in pic_idx:
     f, axarr = plt.subplots(2, K_NN+1)
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9,

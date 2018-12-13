@@ -16,6 +16,9 @@ import metric_learn
 from sklearn.decomposition import PCA
 from sklearn.kernel_approximation import RBFSampler
 from sklearn.manifold import TSNE
+from dml.lmnn import KLMNN
+from dml.kda import KDA
+from sklearn.neural_network import MLPClassifier
 
 from dataproc  import dataLoad, splitData
 from distances import euclidean, chessboard, manhattan, cosine
@@ -24,6 +27,7 @@ from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
 from train     import train, train_rca, unsup_transform
 from validate  import build_tv
+from mlp       import build_mlp_data, build_mlp_test
 
 # ------------------------------------------------------------------------------
 # Setting parameters
@@ -62,7 +66,7 @@ use_kernel = defaultNo(s)
 s = input('Use t-SNE? Y/[N]: ') or 'N'
 use_tsne = defaultNo(s)
 
-train_method = input('training method [none]/lmnn/mmc/rca/mlkr/itml: ') or 'none'
+train_method = input('training method [none]/lmnn/mmc/rca/mlkr/itml/klmnn/kda/mlp: ') or 'none'
 
 s = input('Use K-means in addition to K-NN? Y/[N]: ') or 'N'
 use_kmeans = defaultNo(s)
@@ -114,6 +118,19 @@ itml = metric_learn.itml.ITML_Supervised(gamma=1.0, max_iter=10,
                                          num_labeled=np.inf,
                                          num_constraints=100, bounds=None,
                                          A0=None, verbose=True)
+
+klmnn = KLMNN(num_dims=200, max_iter=10, kernel='linear')
+
+kda = KDA()
+
+mlp = MLPClassifier(hidden_layer_sizes=(20,10,5,), activation='relu',
+                    solver='adam', alpha=0.0001, batch_size='auto',
+                    learning_rate='constant', learning_rate_init=0.001,
+                    power_t=0.5, max_iter=200, shuffle=True, random_state=None,
+                    tol=0.0001, verbose=True, warm_start=False, momentum=0.9,
+                    nesterovs_momentum=True, early_stopping=False,
+                    validation_fraction=0.1, beta_1=0.9, beta_2=0.999,
+                    epsilon=1e-08)
 
 # ------------------------------------------------------------------------------
 # Load data
@@ -186,63 +203,102 @@ elif train_method == 'itml':
     train(itml, t_set, q_set, g_set)
     lap('Train with ITML', tr)
     
+elif train_method == 'klmnn':
+    train(klmnn, t_set, q_set, g_set)
+    lap('Train with KLMNN', tr)
+    
+elif train_method == 'kda':
+    train(kda, t_set, q_set, g_set)
+    lap('Train with KDA', tr)
+
+elif train_method == 'mlp':
+    X_train, y_train = build_mlp_data(t_set)
+    X_test, y_test, qg_index = build_mlp_test(q_set, g_set)
+    mlp.fit(X_train, y_train)
+    y_learnt = mlp.predict_proba(X_test)
+    qg_index = qg_index.astype(int)
+    q_idx = [idx[0] for idx in qg_index]
+    g_idx = [idx[1] for idx in qg_index]
+    
+    q_idx, q_g_idx = np.unique(q_idx, return_index=True)
+    q_g_idx = np.append(q_g_idx, len(qg_index))
+    g_q_idx = []
+    g_q_dist = []
+    for i in range(len(q_g_idx)-1):
+        g_q_idx.append(g_idx[q_g_idx[i]: q_g_idx[i+1]])
+        g_q_dist.append(y_learnt[:,1][q_g_idx[i]: q_g_idx[i+1]])
+    
+    nn_list = []
+    for i, q in enumerate(q_idx):
+        nn_list.append(np.asarray(g_q_idx[i])[np.argsort(g_q_dist[i])])
+    
+    q_mlp_set = list(np.asarray(q_set)[q_idx])
+    knn_mlp_set = [list(np.asarray(g_set)[nn_idx]) for nn_idx, g_idx in zip(nn_list, g_q_idx)]
+    knn_set = kNN(knn_mlp_set, 1)
+    success_array = successArray(q_mlp_set, knn_set)
+    success_rate = np.count_nonzero(success_array) / len(q_mlp_set)
+    
+    mAP = mAPNN(q_mlp_set, knn_mlp_set)
+    print('[-Main] mAP is [{:.2%}]'.format(mAP))
+    lap('Train with MLP', tr)
+    
 else:
     lap('Skip training', tr)
-
-# ------------------------------------------------------------------------------
-# NN
-print('[---NN]------------------------------------------------------K-NN & mAP')
-
-nn_g_set = allNN(q_set, g_set, f_dist)
-lap('Calculate all pair-wise distances for NN', tr)
-# ------------------------------------------------------------------------------
-# K-NN
-
-for k in k_nn_val:
-    knn_set = kNN(nn_g_set, k)
-    success_array = successArray(q_set, knn_set)
-    success_rate = np.count_nonzero(success_array) / len(q_set)
-    print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
-
-# ------------------------------------------------------------------------------
-# mAP
-
-mAP = mAPNN(q_set, nn_g_set)
-print('[-Main] mAP is [{:.2%}]'.format(mAP))
-
-lap('Calculate mAP with NN', tr)
-# ------------------------------------------------------------------------------
-# K-means
-print('[kmean]---------------------------------------------------------K-MEANS')
-
-if use_kmeans:
-    km_set, km_g_labels = kmean(g_set)
-    ass_mtx = linAssign(km_g_labels, g_set)
-    km_reassigned_set = reassign(km_set, ass_mtx)
-    kmean_g_set = allNN(q_set, km_reassigned_set, f_dist)
-    for k in k_nn_val:
-        kmeans_set = kNN(kmean_g_set, k)
-        success_array = successArray(q_set, kmeans_set)
-        success_rate = np.count_nonzero(success_array) / len(q_set)
-        print ('[*Main] With {:2d}-means, success rate is [{:.2%}]'.format(k, success_rate))
-    
-    lap('Calculate k-means', tr)
-# ------------------------------------------------------------------------------
-# mAP
-    
-    mAP = mAPNN(q_set, kmean_g_set)
-    print('[-Main] mAP is [{:.2%}]'.format(mAP))
-    
-    lap('Calculate mAP with NN', tr)
-else:
-    print('[kmean] Skip K-means')
-
-# ------------------------------------------------------------------------------
-# Saving data
-print('[-Save]--------------------------------------------------SAVING RESULTS')
-cfgstr = '_{}{}{}{}_{}_{}'.format(int(use_pca),int(use_val),int(use_kernel),
-          int(use_tsne),train_method,distance_method)
-np.save('npy/q'+cfgstr, q_set)
-np.save('npy/d'+cfgstr, knn_set)
-
-print('[--Sys]-------------------------------------------------------------END')
+#
+## ------------------------------------------------------------------------------
+## NN
+#print('[---NN]------------------------------------------------------K-NN & mAP')
+#
+#nn_g_set = allNN(q_set, g_set, f_dist)
+#lap('Calculate all pair-wise distances for NN', tr)
+## ------------------------------------------------------------------------------
+## K-NN
+#
+#for k in k_nn_val:
+#    knn_set = kNN(nn_g_set, k)
+#    success_array = successArray(q_set, knn_set)
+#    success_rate = np.count_nonzero(success_array) / len(q_set)
+#    print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
+#
+## ------------------------------------------------------------------------------
+## mAP
+#
+#mAP = mAPNN(q_set, nn_g_set)
+#print('[-Main] mAP is [{:.2%}]'.format(mAP))
+#
+#lap('Calculate mAP with NN', tr)
+## ------------------------------------------------------------------------------
+## K-means
+#print('[kmean]---------------------------------------------------------K-MEANS')
+#
+#if use_kmeans:
+#    km_set, km_g_labels = kmean(g_set)
+#    ass_mtx = linAssign(km_g_labels, g_set)
+#    km_reassigned_set = reassign(km_set, ass_mtx)
+#    kmean_g_set = allNN(q_set, km_reassigned_set, f_dist)
+#    for k in k_nn_val:
+#        kmeans_set = kNN(kmean_g_set, k)
+#        success_array = successArray(q_set, kmeans_set)
+#        success_rate = np.count_nonzero(success_array) / len(q_set)
+#        print ('[*Main] With {:2d}-means, success rate is [{:.2%}]'.format(k, success_rate))
+#    
+#    lap('Calculate k-means', tr)
+## ------------------------------------------------------------------------------
+## mAP
+#    
+#    mAP = mAPNN(q_set, kmean_g_set)
+#    print('[-Main] mAP is [{:.2%}]'.format(mAP))
+#    
+#    lap('Calculate mAP with NN', tr)
+#else:
+#    print('[kmean] Skip K-means')
+#
+## ------------------------------------------------------------------------------
+## Saving data
+#print('[-Save]--------------------------------------------------SAVING RESULTS')
+#cfgstr = '_{}{}{}{}_{}_{}'.format(int(use_pca),int(use_val),int(use_kernel),
+#          int(use_tsne),train_method,distance_method)
+#np.save('npy/q'+cfgstr, q_set)
+#np.save('npy/d'+cfgstr, knn_set)
+#
+#print('[--Sys]-------------------------------------------------------------END')

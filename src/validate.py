@@ -24,7 +24,7 @@ def build_qg(v_set):
 
 def build_tv(t_set, V_SIZE):
     'build validation set from training set'
-    v_labels = np.random.choice(toLabelArray(t_set), size=V_SIZE, replace=False)
+    v_labels = np.random.choice(np.unique(toLabelArray(t_set)), size=V_SIZE, replace=False)
     v_set = []
     nt_set = []
     for t_img in t_set:
