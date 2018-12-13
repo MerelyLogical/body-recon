@@ -19,7 +19,7 @@ from sklearn.manifold import TSNE
 
 from dataproc  import dataLoad, splitData
 from distances import euclidean, chessboard, manhattan, cosine
-from nn        import allNN, kNN, mAPNN, successArray, displayResults
+from nn        import allNN, kNN, mAPNN, successArray
 from kmean     import kmean, linAssign, reassign
 from perf      import start, lap
 from train     import train, train_rca, unsup_transform
@@ -42,7 +42,7 @@ def defaultYes(s):
         return True
 
 # values of k-nn
-k_nn_val = [1, 3, 5, 7, 9]
+k_nn_val = [1, 3, 5, 7, 10]
 
 s = input('Use PCA? (please say yes) [Y]/N: ') or 'Y'
 use_pca = defaultYes(s)
@@ -206,14 +206,6 @@ for k in k_nn_val:
     success_rate = np.count_nonzero(success_array) / len(q_set)
     print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
 
-# ------------------------------------------------------------------------------
-# Print K-NN pictures
-
-pic_idx = np.random.choice(len(q_set), size=N_PIC, replace=False)
-for i in pic_idx:
-    displayResults(q_set[i], knn_set[i], k_nn_val[-1])
-
-lap('Evaluate NN success rate', tr)
 # ------------------------------------------------------------------------------
 # mAP
 
