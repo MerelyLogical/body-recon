@@ -1,3 +1,4 @@
 data/*
 src/test.py
 src/__pycache__
+src/npy/*.npy
