@@ -20,7 +20,7 @@ from dml.lmnn import KLMNN
 from dml.kda import KDA
 from sklearn.neural_network import MLPClassifier
 
-from dataproc  import dataLoad, splitData
+from dataproc  import dataLoad, splitData, toLabelArray
 from distances import euclidean, chessboard, manhattan, cosine
 from nn        import allNN, kNN, mAPNN, successArray
 from kmean     import kmean, linAssign, reassign
@@ -212,7 +212,9 @@ elif train_method == 'kda':
     lap('Train with KDA', tr)
 
 elif train_method == 'mlp':
-    X_train, y_train = build_mlp_data(t_set)
+    #X_train, y_train = build_mlp_data(t_set)
+    X_train = np.load('npy/mlp_X.npy')
+    y_train = np.load('npy/mlp_y.npy')
     X_test, y_test, qg_index = build_mlp_test(q_set, g_set)
     mlp.fit(X_train, y_train)
     y_learnt = mlp.predict_proba(X_test)
@@ -239,34 +241,37 @@ elif train_method == 'mlp':
     success_rate = np.count_nonzero(success_array) / len(q_mlp_set)
     
     mAP = mAPNN(q_mlp_set, knn_mlp_set)
-    print('[-Main] mAP is [{:.2%}]'.format(mAP))
+    print('[--MLP] mAP is [{:.2%}]'.format(mAP))
     lap('Train with MLP', tr)
     
 else:
     lap('Skip training', tr)
-#
-## ------------------------------------------------------------------------------
-## NN
-#print('[---NN]------------------------------------------------------K-NN & mAP')
-#
-#nn_g_set = allNN(q_set, g_set, f_dist)
-#lap('Calculate all pair-wise distances for NN', tr)
-## ------------------------------------------------------------------------------
-## K-NN
-#
-#for k in k_nn_val:
-#    knn_set = kNN(nn_g_set, k)
-#    success_array = successArray(q_set, knn_set)
-#    success_rate = np.count_nonzero(success_array) / len(q_set)
-#    print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
-#
-## ------------------------------------------------------------------------------
-## mAP
-#
-#mAP = mAPNN(q_set, nn_g_set)
-#print('[-Main] mAP is [{:.2%}]'.format(mAP))
-#
-#lap('Calculate mAP with NN', tr)
+
+# ------------------------------------------------------------------------------
+# NN
+print('[---NN]------------------------------------------------------K-NN & mAP')
+
+ran_labels = np.random.choice(np.unique(toLabelArray(q_set)), size=50, replace=False)
+q_set = [q_img for q_img in q_set if q_img.label in ran_labels]
+g_set = [g_img for g_img in g_set if g_img.label in ran_labels]
+nn_g_set = allNN(q_set, g_set, f_dist)
+lap('Calculate all pair-wise distances for NN', tr)
+# ------------------------------------------------------------------------------
+# K-NN
+
+for k in k_nn_val:
+    knn_set = kNN(nn_g_set, k)
+    success_array = successArray(q_set, knn_set)
+    success_rate = np.count_nonzero(success_array) / len(q_set)
+    print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
+
+# ------------------------------------------------------------------------------
+# mAP
+
+mAP = mAPNN(q_set, nn_g_set)
+print('[-Main] mAP is [{:.2%}]'.format(mAP))
+
+lap('Calculate mAP with NN', tr)
 ## ------------------------------------------------------------------------------
 ## K-means
 #print('[kmean]---------------------------------------------------------K-MEANS')

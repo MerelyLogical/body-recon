@@ -31,7 +31,7 @@ def build_mlp_data(t_set):
     y_set = []
     for i, t_img in enumerate(t_set):
         if i % 100 == 0:
-            print('Building MLP data... {:5d}'.format(i))
+            print('Building MLP training data... t:{:5d}'.format(i))
         X_img, y_img = build_sd_sets(t_img, t_set)
         X_set = np.vstack((X_set, X_img))
         y_set = y_set + y_img
@@ -41,12 +41,12 @@ def build_mlp_test(q_set, g_set):
     X_set = np.zeros((1, 2*len(q_set[0].feature)))
     y_set = []
     qg_index = np.zeros((1, 2))
-    ran_labels = np.random.choice(np.unique(toLabelArray(q_set)), size=10, replace=False)
+    ran_labels = np.random.choice(np.unique(toLabelArray(q_set)), size=50, replace=False)
     for i, q_img in enumerate(q_set):
         if q_img.label in ran_labels:
             for j, g_img in enumerate(g_set):
                 if j % 100 == 0:
-                    print('Building MLP data... {:5d}{:5d}'.format(i, j))
+                    print('Building MLP testing data... q:{:5d} g:{:5d}'.format(i, j))
                 if g_img.label in ran_labels:
                     X_img = np.concatenate((q_img.feature, g_img.feature))
                     if g_img.label == q_img.label:
