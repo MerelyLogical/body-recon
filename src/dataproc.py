@@ -29,11 +29,11 @@ class Image(object):
             .format(self.label, self.camId, self.path)
         return display
     
-    def subplot (self):
+    def subplot (self, ax):
         'plots self'
         PATH = '../data/images_cuhk03/'
-        plt.imshow(mpimg.imread(PATH + self.path))
-        plt.title('Class: {}'.format(self.label))
+        ax.imshow(mpimg.imread(PATH + self.path))
+        ax.set_title('Class: {}'.format(self.label))
         return None
         
 def toFeatureArray(images):

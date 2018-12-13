@@ -11,12 +11,7 @@ import matplotlib.pyplot as plt
 
 def displayResults(query, k_result, k):
     'prints results for one query onto a figure'
-    plt.figure()
-    plt.subplot(1, k+1, 1)
-    query.subplot()
-    for i in range(k):
-        plt.subplot(1, k+1, i+2)
-        k_result[i].subplot()
+
     return None
 
 # ------------------------------------------------------------------------------
@@ -40,6 +35,11 @@ test_knn_set = np.load('npy/d_{}.npy'.format(test_cfg))
 
 pic_idx = np.random.choice(len(base_q_set), size=N_PIC, replace=False)
 for i in pic_idx:
-    displayResults(base_q_set[i], base_knn_set[i], K_NN)
-    displayResults(test_q_set[i], test_knn_set[i], K_NN)
-
+    f, axarr = plt.subplots(2, K_NN+1)
+    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9,
+                        top=0.9, wspace=0.1, hspace=0.1)
+    [ax.axis('off') for ax in axarr.ravel()]
+    base_q_set[i].subplot(axarr[0,0])
+    for j in range(K_NN):
+        base_knn_set[i][j].subplot(axarr[0,j+1])
+        test_knn_set[i][j].subplot(axarr[1,j+1])
