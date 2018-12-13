@@ -81,8 +81,6 @@ else:
 # REVISIT: distance of tsne can be changed too.
 # but euclidean still semms to perform the best
 
-N_PIC = int(input('How many result pictures to print? [0]: ') or '0')
-
 # ------------------------------------------------------------------------------
 # Initialise
 

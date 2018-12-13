@@ -7,7 +7,6 @@ Created on Tue Dec  4 18:28:15 2018
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 # ------------------------------------------------------------------------------
 # Nearest Neighbour
@@ -75,13 +74,3 @@ def successArray(q_set, k_set):
         return sum([sameLabelCount(k_img, q_img) for k_img in k_images])
             
     return [perQueryRate(q_img, k_set[i]) for i, q_img in enumerate(q_set)]
-
-def displayResults(query, k_result, k):
-    'prints results for one query onto a figure'
-    plt.figure()
-    plt.subplot(1, k+1, 1)
-    query.subplot()
-    for i in range(k):
-        plt.subplot(1, k+1, i+2)
-        k_result[i].subplot()
-    return None
