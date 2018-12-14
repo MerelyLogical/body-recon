@@ -45,4 +45,11 @@ for i in pic_idx:
     axarr[1].scatter(a_o[0], a_o[1], marker = '+')
     axarr[1].scatter(after_right[:,0], after_right[:,1], marker = 'o')
     axarr[1].scatter(after_wrong[:,0], after_wrong[:,1], marker = 'x')
-
+#    f, axarr = plt.subplots(2, K_NN+1)
+#    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9,
+#                        top=0.9, wspace=0.1, hspace=0.1)
+#    [ax.axis('off') for ax in axarr.ravel()]
+#    base_q_set[i].subplot(axarr[0,0])
+#    for j in range(K_NN):
+#        base_knn_set[i][j].subplot(axarr[0,j+1])
+#        test_knn_set[i][j].subplot(axarr[1,j+1])
