@@ -6,6 +6,7 @@ Created on Thu Dec 13 15:52:38 2018
 """
 
 import numpy as np
+from nn import successArray, kNN, mAPNN
 from sklearn.neural_network import MLPClassifier
 from dataproc import toLabelArray, dataLoad, splitData
 
@@ -59,25 +60,34 @@ def build_mlp_test(q_set, g_set):
                         y_set = y_set + [1]
                         qg_index = np.vstack((qg_index, np.asarray([i, j])))
     return X_set[1:,:], y_set, qg_index[1:,:]
-#
-#X = np.load('npy/mlp_X.npy')
-#y = np.load('npy/mlp_y.npy')
-#X_test = np.load('npy/mlp_X_test.npy')
-#y_test = np.load('npy/mlp_y_test.npy')
-#
-#data, meta, idx = dataLoad()
-#t_set, q_set, g_set = splitData(data, meta, idx)
-#del data, meta, idx
 
-
-#mlp = MLPClassifier(hidden_layer_sizes=(20,10,5,), activation='relu',
-#                    solver='adam', alpha=0.0001, batch_size='auto',
-#                    learning_rate='constant', learning_rate_init=0.001,
-#                    power_t=0.5, max_iter=200, shuffle=True, random_state=None,
-#                    tol=0.0001, verbose=True, warm_start=False, momentum=0.9,
-#                    nesterovs_momentum=True, early_stopping=False,
-#                    validation_fraction=0.1, beta_1=0.9, beta_2=0.999,
-#                    epsilon=1e-08)
-#
-#mlp.fit(X, y)
-#y_learnt = mlp.predict_proba(X_test)
+def train_mlp(mlp, X_train, y_train, X_test, y_test, qg_index,
+              q_set, g_set, k_nn_val):
+    mlp.fit(X_train, y_train)
+    y_learnt = mlp.predict_proba(X_test)
+    qg_index = qg_index.astype(int)
+    q_idx = [idx[0] for idx in qg_index]
+    g_idx = [idx[1] for idx in qg_index]
+    
+    q_idx, q_g_idx = np.unique(q_idx, return_index=True)
+    q_g_idx = np.append(q_g_idx, len(qg_index))
+    g_q_idx = []
+    g_q_dist = []
+    for i in range(len(q_g_idx)-1):
+        g_q_idx.append(g_idx[q_g_idx[i]: q_g_idx[i+1]])
+        g_q_dist.append(y_learnt[:,1][q_g_idx[i]: q_g_idx[i+1]])
+    
+    nn_list = []
+    for i, q in enumerate(q_idx):
+        nn_list.append(np.asarray(g_q_idx[i])[np.argsort(g_q_dist[i])])
+    
+    q_mlp_set = list(np.asarray(q_set)[q_idx])
+    knn_mlp_set = [list(np.asarray(g_set)[nn_idx]) for nn_idx, g_idx in zip(nn_list, g_q_idx)]
+    for k in k_nn_val:
+        knn_set = kNN(knn_mlp_set, 1)
+        success_array = successArray(q_mlp_set, knn_set)
+        success_rate = np.count_nonzero(success_array) / len(q_mlp_set)
+        print ('[-Main] With {:2d}-NN, success rate is [{:.2%}]'.format(k, success_rate))
+    mAP = mAPNN(q_mlp_set, knn_mlp_set)
+    print('[--MLP] mAP is [{:.2%}]'.format(mAP))
+    return mAP
