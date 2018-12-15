@@ -212,9 +212,7 @@ elif train_method == 'kda':
     lap('Train with KDA', tr)
 
 elif train_method == 'mlp':
-    X_train = np.load('npy/mlp_X.npy')
-    y_train = np.load('npy/mlp_y.npy')
-    #X_train, y_train = build_mlp_data(t_set)
+    X_train, y_train = build_mlp_data(t_set)
     X_test, y_test, qg_index = build_mlp_test(q_set, g_set)
     train_mlp(mlp, X_train, y_train, X_test, y_test, qg_index,
               q_set, g_set, k_nn_val)
